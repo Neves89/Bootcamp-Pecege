@@ -1,3 +1,4 @@
+using ClinAgenda.src.Application.UseCases;
 using ClinAgenda.src.Core.Interfaces;
 using ClinAgenda.src.Infrastructure.Repositories;
 using ClinAgendaAPI;
@@ -18,6 +19,10 @@ builder.Services.AddScoped<MySqlConnection>(_ => new MySqlConnection(connectionS
 
 builder.Services.AddScoped<IStatusRepository, StatusRepository>();
 builder.Services.AddScoped<StatusUseCase>();
+builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
+builder.Services.AddScoped<SpecialtyUseCase>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<PatientUseCase>();
 
 
 var app = builder.Build();
@@ -38,5 +43,4 @@ app.Run();
 
 
   
-
 
