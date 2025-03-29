@@ -15,11 +15,13 @@ namespace ClinAgenda.src.WebAPI.Controllers
     {
         private readonly PatientUseCase _patientUseCase;
         private readonly StatusUseCase _statusUseCase;
+        private readonly AppointmentUseCase _appointmentUseCase;
 
-        public PatientController(PatientUseCase patientService, StatusUseCase statusUseCase)
+        public PatientController(PatientUseCase patientService, StatusUseCase statusUseCase, AppointmentUseCase appointmentUseCase)
         {
             _patientUseCase = patientService;
             _statusUseCase = statusUseCase;
+            _appointmentUseCase = appointmentUseCase;
         }
         [HttpGet("list")]
         public async Task<IActionResult> GetPatientsAsync([FromQuery] string? name, [FromQuery] string? documentNumber, [FromQuery] int? patientId, [FromQuery] int itemsPerPage = 10, [FromQuery] int page = 1)
@@ -31,7 +33,7 @@ namespace ClinAgenda.src.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $" {ex.Message}");
+                return StatusCode(500, $"{ex.Message}");
             }
         }
         [HttpPost("insert")]
@@ -55,7 +57,7 @@ namespace ClinAgenda.src.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erro interno do Servidor: {ex.Message}");
+                return StatusCode(500, $"={ex.Message}");
             }
         }
         [HttpGet("listById/{id}")]
@@ -69,7 +71,7 @@ namespace ClinAgenda.src.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erro interno do Servidor: {ex.Message}");
+                return StatusCode(500, $"{ex.Message}");
             }
         }
         [HttpPut("update/{id}")]
@@ -91,7 +93,46 @@ namespace ClinAgenda.src.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erro interno do Servidor: {ex.Message}");
+                return StatusCode(500, $"{ex.Message}");
+            }
+        }
+        [HttpGet("autocomplete")]
+        public async Task<IActionResult> AutoComplete([FromQuery] string? name)
+        {
+            try
+            {
+                var result = await _patientUseCase.AutoComplete(name);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"{ex.Message}");
+            }
+        }
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeletePatientAsync(int id)
+        {
+            try
+            {
+                var patientInfo = await _patientUseCase.GetPatientByIdAsync(id);
+
+                var appointment = await _appointmentUseCase.GetAppointmentsAsync(patientName: patientInfo.Name, null, null, 1, 1);
+
+                if (appointment.Total > 0)
+                    return NotFound($"Erro ao deletar, Paciente com agendamento marcado");
+
+                var success = await _patientUseCase.DeletPatientByIdAsync(id);
+
+                if (!success)
+                {
+                    return NotFound($"Paciente com ID {id} não encontrado.");
+                }
+
+                return Ok("Paciente deletado com sucesso");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }
